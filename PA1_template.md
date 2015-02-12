@@ -33,7 +33,8 @@ this term came from, check out <http://en.wikipedia.org/wiki/Extract,_transform,
 Here are the constants we'll us to describe the data we need to get, preprocess 
 and analyze:
 
-```{r}
+
+```r
 # CONSTANTS 
 # Where we will be looking for data, on the net and locally.
 RAW_DATA_URL = "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
@@ -52,7 +53,8 @@ will download it, trying to account for your OS.
 git, via the .gitignore file, so the first time you clone this repo, the data 
 won't be there. In particular its the **RAW_DATA_FILE**.
 
-```{r}
+
+```r
 # ETL Extract Phase - Gets the data.
 (etl.extract = function(refresh=FALSE){
     
@@ -78,25 +80,59 @@ won't be there. In particular its the **RAW_DATA_FILE**.
 })()
 ```
 
+```
+## Extracting data from url.
+```
+
+```
+## [1] TRUE
+```
+
 Before we move on to the next phase of our ETL, lets get a sense of what we are 
 starting with.  We have three field columns, **steps**, **date**, and 
 **interval**. Steps and interval look like they are probably integers, while 
 date is a calendar day. There are a number of rows with NA's which we are 
 going to have to figure out what to do with.
 
-```{r}
+
+```r
 raw_data = read.csv(RAW_DATA_FILE)
 
 head(raw_data) #First few rows.
+```
 
+```
+##   steps       date interval
+## 1    NA 2012-10-01        0
+## 2    NA 2012-10-01        5
+## 3    NA 2012-10-01       10
+## 4    NA 2012-10-01       15
+## 5    NA 2012-10-01       20
+## 6    NA 2012-10-01       25
+```
+
+```r
 summary(raw_data) #Summary
+```
 
+```
+##      steps                date          interval     
+##  Min.   :  0.00   2012-10-01:  288   Min.   :   0.0  
+##  1st Qu.:  0.00   2012-10-02:  288   1st Qu.: 588.8  
+##  Median :  0.00   2012-10-03:  288   Median :1177.5  
+##  Mean   : 37.38   2012-10-04:  288   Mean   :1177.5  
+##  3rd Qu.: 12.00   2012-10-05:  288   3rd Qu.:1766.2  
+##  Max.   :806.00   2012-10-06:  288   Max.   :2355.0  
+##  NA's   :2304     (Other)   :15840
+```
+
+```r
 number_of_na_rows = sum(is.na(raw_data$steps))
 
 rm(raw_data) #Clean up the execution environment.
 ```
 
-_Note that the raw data a column **steps** with `r number_of_na_rows` NA's._
+_Note that the raw data a column **steps** with 2304 NA's._
 We'll want to remove and/or impute these for our analysis.  
 
 #### Transform: Cleaning the Data
@@ -107,7 +143,8 @@ a weekend day or weekday. We serialize the resulting set to a new data files so
 we an selectively load them later.  We will not let the transformed data set be
 committed to the code repository so the analysis can be fully reproduced.
 
-```{r}
+
+```r
 (etl.transform = function(refresh=FALSE){
     
     # loads the raw source data set, removes rows with NA, seperately imputes
@@ -148,6 +185,12 @@ committed to the code repository so the analysis can be fully reproduced.
 })()
 ```
 
+```
+## Extracted data found locally, not repeating.
+## Saving steps imputed by mean to data/activity-imputed-steps-by-mean.csv
+## Saving 'is_weekend' to data/activity-is-weekend.csv
+```
+
 #### Load: Ready for Analysis
 
 The final phase of ETL, is a special serialization called **load** which for
@@ -157,7 +200,8 @@ not serializing our data sets for future analysis.
 
 Here all we do is check for a successful transform, load the serialized data.  
 
-```{r}
+
+```r
 # etl.load will load the raw_data bu default, omitting rows with NA's.  We
 # can additionally choose to load the data frame of imputed steps to avoid
 # NA's entirely, and also add the 'is_weekend' column.
@@ -192,19 +236,47 @@ etl.data = (etl.load = function(refresh=FALSE, omit_na=TRUE, imputed_steps=FALSE
 })()
 ```
 
+```
+## Raw data already transformed, not repeating.
+## Loading base data data/activity.csv
+## Omitting rows with NA values.
+```
+
 To start we've loaded the set with NA's removed. Here is a summary of NA omitted 
 data, ready for analysis:
 
-```{r}
+
+```r
 mean_steps = mean(etl.data$steps)
 summary(etl.data)
+```
+
+```
+##      steps             date               interval     
+##  Min.   :  0.00   Min.   :2012-10-02   Min.   :   0.0  
+##  1st Qu.:  0.00   1st Qu.:2012-10-16   1st Qu.: 588.8  
+##  Median :  0.00   Median :2012-10-29   Median :1177.5  
+##  Mean   : 37.38   Mean   :2012-10-30   Mean   :1177.5  
+##  3rd Qu.: 12.00   3rd Qu.:2012-11-16   3rd Qu.:1766.2  
+##  Max.   :806.00   Max.   :2012-11-29   Max.   :2355.0
 ```
 
 Also we have the option to leverage the data set with all the NA's imputed with
 the mean value of steps per interval which we will need to use later.
 
-```{r}
+
+```r
 summary(etl.load(imputed_steps=TRUE))
+```
+
+```
+##      steps             date               interval     
+##  Min.   :  0.00   Min.   :2012-10-01   Min.   :   0.0  
+##  1st Qu.:  0.00   1st Qu.:2012-10-16   1st Qu.: 588.8  
+##  Median :  0.00   Median :2012-10-31   Median :1177.5  
+##  Mean   : 37.33   Mean   :2012-10-31   Mean   :1177.5  
+##  3rd Qu.: 37.00   3rd Qu.:2012-11-15   3rd Qu.:1766.2  
+##  Max.   :806.00   Max.   :2012-11-30   Max.   :2355.0
 ```
 
 ## Data Exploration
@@ -222,16 +294,27 @@ We have several questions:
 
 To begin, lets aggregate the steps by calendar day.
 
-```{r}
+
+```r
 steps_per_day = aggregate(steps ~ date, etl.data, FUN=sum)
 
 head(steps_per_day)
 ```
 
+```
+##         date steps
+## 1 2012-10-02   126
+## 2 2012-10-03 11352
+## 3 2012-10-04 12116
+## 4 2012-10-05 13294
+## 5 2012-10-06 15420
+## 6 2012-10-07 11015
+```
+
 Here's a simple frequency histogram of steps per day.
 
-```{r}
 
+```r
 mean_steps_na_omitted = floor(mean(steps_per_day$steps))
 median_steps_na_omitted = median(steps_per_day$steps)
 
@@ -259,10 +342,23 @@ with(steps_per_day, {
 })
 ```
 
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9-1.png) 
+
 Here is a summary including the mean and median of the step taken per day:
 
-```{r}
+
+```r
 summary(steps_per_day)
+```
+
+```
+##       date                steps      
+##  Min.   :2012-10-02   Min.   :   41  
+##  1st Qu.:2012-10-16   1st Qu.: 8841  
+##  Median :2012-10-29   Median :10765  
+##  Mean   :2012-10-30   Mean   :10766  
+##  3rd Qu.:2012-11-16   3rd Qu.:13294  
+##  Max.   :2012-11-29   Max.   :21194
 ```
 
 ### Average Daily Activity Pattern
@@ -271,7 +367,8 @@ Lets take a look at the average number of steps over 5 minutes intervals across
 the data set.  This will give us a picture of when during the day the subject is
 most often active.
 
-```{r, fig.width=12, fig.height=5}
+
+```r
 daily_interval = aggregate(steps ~ interval, etl.data, FUN=mean)
 
 with(daily_interval, {
@@ -305,24 +402,49 @@ with(daily_interval, {
 })
 ```
 
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-1.png) 
+
 ### Imputing missing values
 
 So far our analysis has been making use of only rows with no NA values in the
-**steps** column.  Recall there were `r number_of_na_rows` rows we excluded. 
+**steps** column.  Recall there were 2304 rows we excluded. 
 Let's reload the data using our impute strategy (which replaces the NA's with 
-the computed mean of `r mean_steps` steps). We might as well add the 
+the computed mean of 37.3825996 steps). We might as well add the 
 **is_weekend** column now too.
 
-```{r}
+
+```r
 etl.data = etl.load(imputed_steps=TRUE, is_weekend=TRUE)
+```
+
+```
+## Raw data already transformed, not repeating.
+## Loading base data data/activity.csv
+## Loading imputed_steps data data/activity-imputed-steps-by-mean.csv
+## Loading is_weekend data data/activity-is-weekend.csv
+## Omitting rows with NA values.
+```
+
+```r
 summary(etl.data)
+```
+
+```
+##      steps             date               interval      is_weekend     
+##  Min.   :  0.00   Min.   :2012-10-01   Min.   :   0.0   Mode :logical  
+##  1st Qu.:  0.00   1st Qu.:2012-10-16   1st Qu.: 588.8   FALSE:12960    
+##  Median :  0.00   Median :2012-10-31   Median :1177.5   TRUE :4608     
+##  Mean   : 37.33   Mean   :2012-10-31   Mean   :1177.5   NA's :0        
+##  3rd Qu.: 37.00   3rd Qu.:2012-11-15   3rd Qu.:1766.2                  
+##  Max.   :806.00   Max.   :2012-11-30   Max.   :2355.0
 ```
 
 Now that our data has been updated with missing values replaced with the mean 
 number of steps per interval, let's see look at our earlier histogram and mean
 and median values.
 
-```{r}
+
+```r
 steps_per_day = aggregate(steps ~ date, etl.data, FUN=sum)
 
 mean_steps_imputed = floor(mean(steps_per_day$steps))
@@ -356,8 +478,10 @@ with(steps_per_day, {
 })
 ```
 
-Notice that the mean has changed changed by `r mean_steps_imputed - mean_steps_na_omitted`
-and the median has changed by `r median_steps_imputed - median_steps_na_omitted`.
+![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13-1.png) 
+
+Notice that the mean has changed changed by -15
+and the median has changed by -109.
 The imputation has some effect on the mean and median but does not significantly 
 change their values.
 
@@ -367,7 +491,8 @@ Now we want to take a look at the average number of steps taken per 5 minute
 interval when we first seperate the data into two groups, weekend and weekdays.
 
 
-```{r, fig.width=12, fig.height=12}
+
+```r
 daily_interval = aggregate(steps ~ interval + is_weekend, etl.data, FUN=mean)
 # Weekday patterns
 weekday_daily_interval = subset(daily_interval, daily_interval$is_weekend == FALSE)
@@ -447,8 +572,9 @@ tryCatch({
     # Reset par values
     par(old.par)
 })
-
 ```
+
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14-1.png) 
 
 Note the weekdays have a higher maximum average peak, but over all the weekends
 have a higher mean and median value.  In particular, we note the subject appears
