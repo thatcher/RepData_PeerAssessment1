@@ -450,9 +450,9 @@ tryCatch({
 
 ```
 
-Note the weekdays have a higher maximum average peak, but over all the weekends
+Note the weekdays have a higher maximum average activity peak, but over all the weekends
 have a higher mean and median value.  In particular, we note the subject appears
-to being walking earlier on weekdays while doing the majority of the walking
+to begin activity earlier on weekdays while doing the majority of the activity
 toward the beginning of the day, whereas on the weekend, the subject starts the
 activity later but maintains a higher activity rate throughout the day.
 
